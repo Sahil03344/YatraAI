@@ -317,15 +317,7 @@ def physics_dead_reckoning(start, end, yaw_noise_std=0.0):
 # =========================================================
 
 @st.cache_resource
-def train_models(start, end):
-
-    train_mask = np.ones(
-        len(df),
-        dtype=bool
-    )
-
-    # Do not train on blackout section
-    train_mask[start:end] = False
+def train_models():
 
     positions = df[
         ["true_x", "true_y"]
@@ -338,27 +330,27 @@ def train_models(start, end):
     )
 
     rf_x = RandomForestRegressor(
-        n_estimators=100,
-        max_depth=14,
+        n_estimators=50,
+        max_depth=12,
         n_jobs=-1,
         random_state=42
     )
 
     rf_y = RandomForestRegressor(
-        n_estimators=100,
-        max_depth=14,
+        n_estimators=50,
+        max_depth=12,
         n_jobs=-1,
         random_state=42
     )
 
     rf_x.fit(
-        df.loc[train_mask, FEATURES],
-        delta_position[train_mask, 0]
+        df[FEATURES],
+        delta_position[:, 0]
     )
 
     rf_y.fit(
-        df.loc[train_mask, FEATURES],
-        delta_position[train_mask, 1]
+        df[FEATURES],
+        delta_position[:, 1]
     )
 
     return rf_x, rf_y
@@ -510,10 +502,7 @@ with st.spinner("🧠 YatraAI is processing sensor data..."):
     )
 
     # Train AI models
-    rf_x, rf_y = train_models(
-        start,
-        end
-    )
+    rf_x, rf_y = train_models()
 
     # Test features — perturbed to reflect this scenario's sensor conditions
     X_test = df.loc[
